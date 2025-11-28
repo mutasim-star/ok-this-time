@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Journey: The Dopamine Curve</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+            line-height: 1.65;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Background Quote - Handcrafted feel */
+        .bg-quote {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            color: rgba(255, 107, 53, 0.03);
+            text-align: center;
+            white-space: nowrap;
+            z-index: -1;
+            pointer-events: none;
+            user-select: none;
+            line-height: 1.1;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+        }
+        
+        .bg-quote .author {
+            display: block;
+            font-size: 0.3em;
+            font-weight: 400;
+            margin-top: 20px;
+            color: rgba(255, 107, 53, 0.04);
+            text-align: right;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 25px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 70px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            font-size: clamp(2.8rem, 6vw, 4.2rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff3e3e 45%, #3a86ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 18px;
+            letter-spacing: -0.03em;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 15px;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b35, #ff3e3e, #3a86ff);
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        h1:hover::after {
+            width: 220px;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            color: #a0a0a0;
+            font-weight: 400;
+            max-width: 650px;
+            margin: 0 auto;
+            letter-spacing: -0.01em;
+        }
+        
+        /* Wider Chart Container */
+        .chart-wrapper {
+            background: rgba(20, 20, 20, 0.55);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 107, 53, 0.12);
+            border-radius: 18px;
+            padding: 35px;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeInUp 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s forwards;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b35, #ff3e3e, #3a86ff);
+            z-index: 2;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 580px; /* Taller for better visibility */
+            z-index: 1;
+        }
+        
+        /* Handcrafted legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            margin-top: 35px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 107, 53, 0.08);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 107, 53, 0.15);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .legend-item:hover {
+            background: rgba(255, 107, 53, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(255, 107, 53, 0.3);
+        }
+        
+        .legend-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .legend-item:hover::before {
+            left: 100%;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .legend-item span {
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        
+        /* Phases Grid - More handcrafted */
+        .phases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 26px;
+            margin-top: 60px;
+        }
+        
+        .phase-card {
+            background: rgba(20, 20, 20, 0.5);
+            border: 1px solid rgba(255, 107, 53, 0.08);
+            border-radius: 14px;
+            padding: 32px;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0;
+            transform: translateY(40px);
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        
+        .phase-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--phase-color, #ff6b35);
+            transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: -1;
+        }
+        
+        .phase-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 107, 53, 0.25);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+        }
+        
+        .phase-card:hover::before {
+            width: 8px;
+        }
+        
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        
+        .phase-number {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--phase-color, #ff6b35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 0 15px var(--phase-color, #ff6b35);
+        }
+        
+        .phase-card:hover .phase-number {
+            transform: scale(1.15) rotate(6deg);
+        }
+        
+        .phase-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+        
+        .phase-duration {
+            display: inline-block;
+            font-size: 0.87rem;
+            color: #a0a0a0;
+            background: rgba(255, 107, 53, 0.12);
+            padding: 5px 12px;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .phase-description {
+            font-size: 1.02rem;
+            color: #c5c5c5;
+            line-height: 1.75;
+        }
+        
+        .anime-list {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 107, 53, 0.1);
+        }
+        
+        .anime-list-title {
+            font-size: 0.85rem;
+            color: #ff6b35;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+        
+        .anime-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .anime-tag {
+            font-size: 0.8rem;
+            background: rgba(255, 107, 53, 0.08);
+            color: #a0a0a0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 53, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .anime-tag:hover {
+            background: rgba(255, 107, 53, 0.15);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        
+        /* Endings Section */
+        .endings-section {
+            margin-top: 80px;
+            padding: 60px 40px;
+            background: rgba(20, 20, 20, 0.6);
+            border: 1px solid rgba(255, 107, 53, 0.12);
+            border-radius: 18px;
+            opacity: 0;
+            transform: translateY(40px);
+            animation: fadeInUp 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s forwards;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .endings-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e53e3e, #ff6b35, #3a86ff);
+            z-index: 2;
+        }
+        
+        .endings-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 45px;
+            color: #fff;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .endings-title::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 3px;
+            background: linear-gradient(90deg, #e53e3e, #ff3e3e, #3a86ff);
+            border-radius: 2px;
+        }
+        
+        .endings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 26px;
+        }
+        
+        .ending-card {
+            background: rgba(20, 20, 20, 0.7);
+            border: 1px solid;
+            border-radius: 14px;
+            padding: 32px;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ending-card:nth-child(1) {
+            border-color: rgba(229, 62, 62, 0.15);
+        }
+        
+        .ending-card:nth-child(1):hover {
+            border-color: rgba(229, 62, 62, 0.4);
+            box-shadow: 0 12px 40px rgba(229, 62, 62, 0.15);
+        }
+        
+        .ending-card:nth-child(2) {
+            border-color: rgba(255, 107, 53, 0.15);
+        }
+        
+        .ending-card:nth-child(2):hover {
+            border-color: rgba(255, 107, 53, 0.4);
+            box-shadow: 0 12px 40px rgba(255, 107, 53, 0.15);
+        }
+        
+        .ending-card:nth-child(3) {
+            border-color: rgba(58, 134, 255, 0.15);
+        }
+        
+        .ending-card:nth-child(3):hover {
+            border-color: rgba(58, 134, 255, 0.4);
+            box-shadow: 0 12px 40px rgba(58, 134, 255, 0.15);
+        }
+        
+        .ending-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .ending-icon {
+            width: 52px;
+            height: 52px;
+            font-size: 2rem;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .ending-card:hover .ending-icon {
+            transform: scale(1.2) rotate(8deg);
+        }
+        
+        .ending-card:nth-child(1) .ending-icon {
+            background: rgba(229, 62, 62, 0.1);
+        }
+        
+        .ending-card:nth-child(2) .ending-icon {
+            background: rgba(255, 107, 53, 0.1);
+        }
+        
+        .ending-card:nth-child(3) .ending-icon {
+            background: rgba(58, 134, 255, 0.1);
+        }
+        
+        .ending-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: #fff;
+        }
+        
+        .ending-description {
+            font-size: 1rem;
+            color: #a0a0a0;
+            line-height: 1.75;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 15px;
+            }
+            
+            .chart-container {
+                height: 450px;
+            }
+            
+            .phases-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .phase-card {
+                padding: 24px;
+            }
+            
+            .legend {
+                gap: 12px;
+            }
+            
+            .bg-quote {
+                font-size: clamp(2rem, 6vw, 3.5rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-quote">
+        Dont become an otaku
+        <span class="author">- Mutasim Billah</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>The Anime Watchers Journey</h1>
+            <p class="subtitle">Find the phase you're in</p>
+        </header>
+        
+        <div class="chart-wrapper">
+            <div class="chart-container">
+                <canvas id="animeChart"></canvas>
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b35;"></div>
+                    <span>Discovery Phase</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff3e3e;"></div>
+                    <span>Exploration Phase</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e53e3e;"></div>
+                    <span>Decline Phase</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3a86ff;"></div>
+                    <span>Resolution Phase</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="phases-grid">
+            <div class="phase-card" style="--phase-color: #ff6b35;">
+                <div class="phase-header">
+                    <div class="phase-number">1</div>
+                    <div>
+                        <div class="phase-title">The Introduction</div>
+                        <div class="phase-duration">Month 1</div>
+                    </div>
+                </div>
+                <p class="phase-description">Your first anime. It's interesting, different. The dopamine starts flowing as you discover a new world of storytelling.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You watched:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Death Note</span>
+                        <span class="anime-tag">Sword Art Online</span>
+                        <span class="anime-tag">Demon Slayer</span>
+                        <span class="anime-tag">Spy x Family</span>
+                        <span class="anime-tag">One Punch Man</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #ff6b35;">
+                <div class="phase-header">
+                    <div class="phase-number">2</div>
+                    <div>
+                        <div class="phase-title">The Hook</div>
+                        <div class="phase-duration">Months 1-2</div>
+                    </div>
+                </div>
+                <p class="phase-description">You're invested. Characters feel real. Plot twists dominate your thoughts. You need more.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You watched:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Attack on Titan</span>
+                        <span class="anime-tag">Jujutsu Kaisen</span>
+                        <span class="anime-tag">Chainsaw Man</span>
+                        <span class="anime-tag">Black Clover</span>
+                        <span class="anime-tag">Fire Force</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #ff6b35;">
+                <div class="phase-header">
+                    <div class="phase-number">3</div>
+                    <div>
+                        <div class="phase-title">Community Initiation</div>
+                        <div class="phase-duration">Months 2-3</div>
+                    </div>
+                </div>
+                <p class="phase-description">You ask for recommendations. The community floods you with "masterpieces". Your watchlist explodes.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You watched:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Hunter x Hunter</span>
+                        <span class="anime-tag">Vinland Saga</span>
+                        <span class="anime-tag">86</span>
+                        <span class="anime-tag">Frieren</span>
+                        <span class="anime-tag">Classroom of Elite</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #ff3e3e;">
+                <div class="phase-header">
+                    <div class="phase-number">4</div>
+                    <div>
+                        <div class="phase-title">Golden Exploration</div>
+                        <div class="phase-duration">Months 3-16</div>
+                    </div>
+                </div>
+                <p class="phase-description">DOPAMINE EXPLOSION. Masterpiece after masterpiece. Every episode is ecstasy. You've found heaven.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You binged:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Re:Zero</span>
+                        <span class="anime-tag">Overlord</span>
+                        <span class="anime-tag">Dr. Stone</span>
+                        <span class="anime-tag">Re:Monster</span>
+                        <span class="anime-tag">Danmachi</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #e53e3e;">
+                <div class="phase-header">
+                    <div class="phase-number">5</div>
+                    <div>
+                        <div class="phase-title">The Drought</div>
+                        <div class="phase-duration">Months 16-28</div>
+                    </div>
+                </div>
+                <p class="phase-description">Masterpieces are drying up. You notice tropes. The magic fades. Each new show is a gamble.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You watched:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Konosuba</span>
+                        <span class="anime-tag">Baki Hanma</span>
+                        <span class="anime-tag">Hajime no Ippo</span>
+                        <span class="anime-tag">Bungo Stray Dogs</span>
+                        <span class="anime-tag">Bartender</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #e53e3e;">
+                <div class="phase-header">
+                    <div class="phase-number">6</div>
+                    <div>
+                        <div class="phase-title">Desperate Measures</div>
+                        <div class="phase-duration">Months 28-40</div>
+                    </div>
+                </div>
+                <p class="phase-description">You're chasing the dragon. "Maybe this isekai with a vending machine will be good..."</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">You desperate-watched:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Farming Life</span>
+                        <span class="anime-tag">7th Time Loop</span>
+                        <span class="anime-tag">Failure Frame</span>
+                        <span class="anime-tag">Parallel World Pharmacy</span>
+                        <span class="anime-tag">World's Finest Assassin</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="phase-card" style="--phase-color: #3a86ff;">
+                <div class="phase-header">
+                    <div class="phase-number">7</div>
+                    <div>
+                        <div class="phase-title">The Crossroads</div>
+                        <div class="phase-duration">Month 40+</div>
+                    </div>
+                </div>
+                <p class="phase-description">Three paths await. Your choice here defines your anime future forever.</p>
+                <div class="anime-list">
+                    <div class="anime-list-title">Your path determines if you rewatch:</div>
+                    <div class="anime-tags">
+                        <span class="anime-tag">Frieren</span>
+                        <span class="anime-tag">86</span>
+                        <span class="anime-tag">Vinland Saga</span>
+                        <span class="anime-tag">Insomniacs 💎</span>
+                        <span class="anime-tag">Classroom of Elite</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="endings-section">
+            <h2 class="endings-title">The Three Paths Forward</h2>
+            <div class="endings-grid">
+                <div class="ending-card">
+                    <div class="ending-icon">😞</div>
+                    <h3 class="ending-title">The Great Retreat</h3>
+                    <p class="ending-description">You leave anime altogether, disillusioned. "Anime was a mistake," you declare, returning to normie media forever. Those gems you found? Buried and forgotten.</p>
+                </div>
+                <div class="ending-card">
+                    <div class="ending-icon">🤪</div>
+                    <h3 class="ending-title">The Degenerate Weeb</h3>
+                    <p class="ending-description">You embrace the trash completely. Defending isekai #472 unironically. You've become the anime weirdo. No one understands your sophisticated taste in "Parallel World Pharmacy."</p>
+                </div>
+                <div class="ending-card">
+                    <div class="ending-icon">🧘</div>
+                    <h3 class="ending-title">The Enlightened Sage</h3>
+                    <p class="ending-description">You return with wisdom. Only watching true masterpieces seasonally. Savoring Frieren like fine wine while the masses chase seasonal trash. Quality over quantity. You've ascended.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('animeChart').getContext('2d');
+        
+        // Create gradient for the line
+        const gradient = ctx.createLinearGradient(0, 0, 0, 500);
+        gradient.addColorStop(0, '#ff6b35');
+        gradient.addColorStop(0.5, '#ff3e3e');
+        gradient.addColorStop(1, '#3a86ff');
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [
+                    'Start', 'Month 1', 'Month 2', 'Month 4', 'Month 8', 
+                    'Month 12', 'Month 16', 'Month 20', 'Month 24', 'Month 28',
+                    'Month 32', 'Month 36', 'Month 40', 'Month 44', 'Month 48'
+                ],
+                datasets: [{
+                    label: 'Enjoyment & Dopamine Level',
+                    data: [
+                        5, 30, 50, 75, 90, 
+                        100, 100, 85, 70, 50, 
+                        35, 25, 20, 10, 60
+                    ],
+                    borderColor: gradient,
+                    backgroundColor: (context) => {
+                        const bg = ctx.createLinearGradient(0, 0, 0, 500);
+                        bg.addColorStop(0, 'rgba(255, 107, 53, 0.15)');
+                        bg.addColorStop(0.5, 'rgba(255, 62, 62, 0.1)');
+                        bg.addColorStop(1, 'rgba(58, 134, 255, 0.05)');
+                        return bg;
+                    },
+                    borderWidth: 5,
+                    fill: true,
+                    tension: 0.42,
+                    pointRadius: 9,
+                    pointHoverRadius: 14,
+                    pointBackgroundColor: [
+                        '#ff6b35', '#ff6b35', '#ff6b35', '#ff6b35', '#ff3e3e',
+                        '#ff3e3e', '#ff3e3e', '#e53e3e', '#e53e3e', '#e53e3e',
+                        '#e53e3e', '#e53e3e', '#3a86ff', '#3a86ff', '#3a86ff'
+                    ],
+                    pointBorderColor: '#0a0a0a',
+                    pointBorderWidth: 2,
+                    pointHoverBorderWidth: 3,
+                    pointHoverBorderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    intersect: false,
+                    axis: 'x'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(20, 20, 20, 0.98)',
+                        titleColor: '#ff6b35',
+                        bodyColor: '#e5e5e5',
+                        padding: 16,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        borderColor: 'rgba(255, 107, 53, 0.3)',
+                        borderWidth: 1,
+                        titleFont: {
+                            family: 'Inter',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Inter',
+                            size: 13
+                        },
+                        callbacks: {
+                            title: function(context) {
+                                const phaseNames = [
+                                    'Point Zero', 'First Taste', 'Getting Hooked', 
+                                    'Community Hype', 'Rising High', 
+                                    'Peak Ecstasy', 'Masterpiece Heaven', 'Early Decline', 
+                                    'Running Dry', 'Drought Phase', 'Desperate Measures', 
+                                    'Trash Tolerance', 'The Crossroads', 'Final Decision', 
+                                    'Enlightened Path'
+                                ];
+                                return phaseNames[context[0].dataIndex];
+                            },
+                            label: function(context) {
+                                const values = [
+                                    'Baseline', 'Curiosity', 'Investment', 'Hype Building', 
+                                    'Skyrocketing', 'MAXIMUM', 'Peak Sustained', 
+                                    'First Doubts', 'Scarcity Hits', 'Full Drought', 
+                                    'Desperation', 'Chasing Dragon', 'Crossroads Reached', 
+                                    'Choose Fate', 'Wisdom Achieved'
+                                ];
+                                return `Status: ${values[context.dataIndex]}`;
+                            },
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                if (index === 12) {
+                                    return '\n🎯 THREE PATHS AWAIT';
+                                }
+                                if (index === 14) {
+                                    return '\n✨ You made it';
+                                }
+                                return '';
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            // Phase Zone Backgrounds (Faded)
+                            phase1Zone: {
+                                type: 'box',
+                                xMin: -0.5,
+                                xMax: 2.8,
+                                backgroundColor: 'rgba(255, 107, 53, 0.06)',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            },
+                            phase2Zone: {
+                                type: 'box',
+                                xMin: 2.8,
+                                xMax: 6.8,
+                                backgroundColor: 'rgba(255, 62, 62, 0.06)',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            },
+                            phase3Zone: {
+                                type: 'box',
+                                xMin: 6.8,
+                                xMax: 11.8,
+                                backgroundColor: 'rgba(229, 62, 62, 0.06)',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            },
+                            phase4Zone: {
+                                type: 'box',
+                                xMin: 11.8,
+                                xMax: 14.5,
+                                backgroundColor: 'rgba(58, 134, 255, 0.06)',
+                                borderWidth: 0,
+                                borderRadius: 4
+                            },
+                            
+                            // Phase Dividing Lines
+                            divider1: {
+                                type: 'line',
+                                xMin: 2.8,
+                                xMax: 2.8,
+                                borderColor: 'rgba(255, 107, 53, 0.4)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    display: true,
+                                    content: 'Discovery → Exploration',
+                                    position: 'start',
+                                    rotation: 90,
+                                    font: {
+                                        size: 10,
+                                        weight: '600',
+                                        family: 'Inter'
+                                    },
+                                    color: '#ff6b35',
+                                    padding: 6,
+                                    backgroundColor: 'rgba(10, 10, 10, 0.7)'
+                                }
+                            },
+                            divider2: {
+                                type: 'line',
+                                xMin: 6.8,
+                                xMax: 6.8,
+                                borderColor: 'rgba(255, 62, 62, 0.4)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    display: true,
+                                    content: 'Exploration → Decline',
+                                    position: 'start',
+                                    rotation: 90,
+                                    font: {
+                                        size: 10,
+                                        weight: '600',
+                                        family: 'Inter'
+                                    },
+                                    color: '#ff3e3e',
+                                    padding: 6,
+                                    backgroundColor: 'rgba(10, 10, 10, 0.7)'
+                                }
+                            },
+                            divider3: {
+                                type: 'line',
+                                xMin: 11.8,
+                                xMax: 11.8,
+                                borderColor: 'rgba(58, 134, 255, 0.4)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    display: true,
+                                    content: 'Decline → Resolution',
+                                    position: 'start',
+                                    rotation: 90,
+                                    font: {
+                                        size: 10,
+                                        weight: '600',
+                                        family: 'Inter'
+                                    },
+                                    color: '#3a86ff',
+                                    padding: 6,
+                                    backgroundColor: 'rgba(10, 10, 10, 0.7)'
+                                }
+                            },
+                            
+                            // Phase Labels (in-chart)
+                            phase1Label: {
+                                type: 'label',
+                                xValue: 1.4,
+                                yValue: 105,
+                                backgroundColor: 'transparent',
+                                content: 'DISCOVERY PHASE',
+                                font: {
+                                    size: 13,
+                                    weight: '700',
+                                    family: 'Inter'
+                                },
+                                color: '#ff6b35'
+                            },
+                            phase2Label: {
+                                type: 'label',
+                                xValue: 4.8,
+                                yValue: 105,
+                                backgroundColor: 'transparent',
+                                content: 'EXPLORATION PHASE',
+                                font: {
+                                    size: 13,
+                                    weight: '700',
+                                    family: 'Inter'
+                                },
+                                color: '#ff3e3e'
+                            },
+                            phase3Label: {
+                                type: 'label',
+                                xValue: 9.3,
+                                yValue: 105,
+                                backgroundColor: 'transparent',
+                                content: 'DECLINE PHASE',
+                                font: {
+                                    size: 13,
+                                    weight: '700',
+                                    family: 'Inter'
+                                },
+                                color: '#e53e3e'
+                            },
+                            phase4Label: {
+                                type: 'label',
+                                xValue: 13.1,
+                                yValue: 105,
+                                backgroundColor: 'transparent',
+                                content: 'RESOLUTION PHASE',
+                                font: {
+                                    size: 13,
+                                    weight: '700',
+                                    family: 'Inter'
+                                },
+                                color: '#3a86ff'
+                            },
+                            
+                            // Peak indicator
+                            peakLine: {
+                                type: 'line',
+                                yMin: 100,
+                                yMax: 100,
+                                borderColor: 'rgba(255, 62, 62, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [4, 4],
+                                label: {
+                                    display: true,
+                                    content: 'PEAK',
+                                    position: 'end',
+                                    font: {
+                                        size: 11,
+                                        weight: '600'
+                                    },
+                                    color: '#ff3e3e'
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#a0a0a0',
+                            font: {
+                                family: 'Inter',
+                                size: 11,
+                                weight: '500'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Timeline (Months)',
+                            color: '#e5e5e5',
+                            font: {
+                                family: 'Inter',
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 110,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.035)'
+                        },
+                        ticks: {
+                            color: '#a0a0a0',
+                            font: {
+                                family: 'Inter',
+                                size: 11,
+                                weight: '500'
+                            },
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Dopamine & Enjoyment Level',
+                            color: '#e5e5e5',
+                            font: {
+                                family: 'Inter',
+                                size: 13,
+                                weight: '600'
+                            }
+                        }
+                    }
+                },
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const phaseInfo = [
+                            { title: "Phase 0: The Beginning", desc: "You've heard about anime. You're curious but skeptical." },
+                            { title: "Phase 1: First Anime", desc: "You finish your first series. It's surprisingly good." },
+                            { title: "Phase 2: Hooked", desc: "You're invested. Characters feel real." },
+                            { title: "Phase 3: Community", desc: "You ask for recommendations. Your watchlist explodes." },
+                            { title: "Phase 4: Golden Age", desc: "You binge masterpiece after masterpiece." },
+                            { title: "Phase 4: Peak", desc: "You've found the motherload. Mind = blown." },
+                            { title: "Phase 4: Heaven", desc: "Discovering hidden gems. Life is good." },
+                            { title: "Phase 5: Decline", desc: "Masterpieces running out. Magic fading." },
+                            { title: "Phase 5: Drought", desc: "Scraping the bottom. Nothing hits the same." },
+                            { title: "Phase 5: Crisis", desc: "Rewatching favorites. The void grows." },
+                            { title: "Phase 6: Desperation", desc: "You're watching isekai #472." },
+                            { title: "Phase 6: Abyss", desc: "You've seen questionable things." },
+                            { title: "Phase 7: Crossroads", desc: "Three paths await. Choose wisely." },
+                            { title: "Phase 7: Decision", desc: "Edge of the cliff. Whats your fate?" },
+                            { title: "Phase 7: Enlightenment", desc: "Quality over quantity. You ascended." }
+                        ];
+                        
+                        alert(`📍 ${phaseInfo[index].title}\n\n${phaseInfo[index].desc}`);
+                    }
+                },
+                onHover: (event, activeElements) => {
+                    const canvas = event.native.target;
+                    canvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                }
+            },
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    
+                    // Add subtle texture
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.008)';
+                    for (let i = 0; i < chart.width; i += 30) {
+                        for (let j = 0; j < chart.height; j += 30) {
+                            if (Math.random() > 0.7) {
+                                ctx.fillRect(i, j, 1, 1);
+                            }
+                        }
+                    }
+                    
+                    ctx.restore();
+                }
+            }]
+        });
+        
+        // Mobile touch handling
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const canvas = document.getElementById('animeChart');
+        
+        if (isTouchDevice) {
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, false);
+                if (points.length) {
+                    const index = points[0].index;
+                    const phases = ["Start", "Discovery", "Hook", "Community", "Rise", "Peak", "Heaven", "Fall", "Drought", "Crisis", "Desperate", "Abyss", "Crossroads", "Decision", "Enlightenment"];
+                    
+                    canvas.style.transform = 'scale(0.97)';
+                    setTimeout(() => { canvas.style.transform = 'scale(1)'; }, 120);
+                    
+                    alert(`📍 Point ${index + 1}/15: ${phases[index]}\n\nTouch another point to explore.`);
+                }
+            }, { passive: false });
+        }
+        
+        // Scroll animations
+        const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -60px 0px' };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.phase-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(50px)';
+            card.style.transition = 'opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            observer.observe(card);
+        });
+        
+        // Page load animation
+        window.addEventListener('load', () => {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.6s ease';
+            setTimeout(() => { document.body.style.opacity = '1'; }, 50);
+        });
+    </script>
+</body>
+</html>
